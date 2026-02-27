@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import requests
 
-# 1. ESTÉTICA SOBERANA - VISIBILIDADE ESTRATÉGICA
+# 1. ESTÉTICA E CONFIGURAÇÃO
 st.set_page_config(page_title="Wealth Catalyst IA", layout="wide")
 
 st.markdown("""
@@ -15,7 +15,7 @@ st.markdown("""
     .selic-bg { background-color: #00429d; } 
     .ipca-bg { background-color: #a33200; }  
     .alvo-bg { background-color: #005f36; }  
-    .sugestao-card { background-color: #1E1E1E; padding: 20px; border-left: 5px solid #FFD700; border-radius: 10px; margin-bottom: 20px; }
+    .acelerador-card { background-color: #1E1E1E; padding: 20px; border: 2px solid #FFD700; border-radius: 10px; margin-bottom: 20px; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -23,80 +23,84 @@ def real_br(valor):
     return f"R$ {valor:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
 
 if "auth" not in st.session_state: st.session_state.auth = False
-
 if not st.session_state.auth:
     st.title("🛡️ Wealth Catalyst IA")
     senha = st.text_input("Chave de Segurança:", type="password")
     if st.button("Acessar Terminal"):
-        if senha == "(12%34)": st.session_state.auth = True; st.rerun()
+        if senha == ".1234.": st.session_state.auth = True; st.rerun()
     st.stop()
 
-# 2. MOTOR DE BUSCA E INTELIGÊNCIA DE ALOCAÇÃO
+# 2. MOTOR DE BUSCA (REAL-TIME) + INTELIGÊNCIA DE ACELERAÇÃO
 @st.cache_data(ttl=3600)
-def scanner_soberano():
+def buscar_dados_mercado():
     try:
         s = float(requests.get("https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados/ultimos/1?formato=json", timeout=5).json()[0]['valor'])
         i = float(requests.get("https://api.bcb.gov.br/dados/serie/bcdata.sgs.433/dados/ultimos/1?formato=json", timeout=5).json()[0]['valor'])
+        
         radar = [
-            {"Ativo": "LCI/LCA (Isento)", "Rent_Anual": i + 6.5, "Risco": "Baixo", "Peso": 0.40},
-            {"Ativo": "CDB (120% CDI)", "Rent_Anual": (s * 1.20) * 0.825, "Risco": "Baixo", "Peso": 0.30},
-            {"Ativo": "Ações/FIIs", "Rent_Anual": 15.0, "Risco": "Alto", "Peso": 0.30}
+            {"Ativo": "LCI/LCA (Isento)", "Rent_Anual": i + 6.8, "Risco": "Baixo", "Tipo": "Proteção"},
+            {"Ativo": "CDB (125% CDI)", "Rent_Anual": (s * 1.25) * 0.825, "Risco": "Baixo", "Tipo": "Renda Fixa"},
+            {"Ativo": "FIIs (Destaque Dividendos)", "Rent_Anual": 12.5, "Risco": "Moderado", "Tipo": "Renda Variável"},
+            {"Ativo": "Ações (Máxima Aceleração)", "Rent_Anual": 16.2, "Risco": "Alto", "Tipo": "Crescimento"},
+            {"Ativo": "CRI/CRA Premium", "Rent_Anual": i + 7.8, "Risco": "Moderado", "Tipo": "Crédito Privado"}
         ]
         return s, i, radar
     except: return 13.25, 4.50, []
 
-selic_at, ipca_at, radar_dados = scanner_soberano()
+selic_at, ipca_at, radar_dados = buscar_dados_mercado()
+df_radar = pd.DataFrame(radar_dados)
 
-# 3. SIDEBAR
-st.sidebar.title("🕹️ Comando")
-aporte_base = st.sidebar.number_input("Aporte Padrão (R$):", value=2500.0)
+# Identifica o título com maior poder de aceleração
+melhor_ativo_nome = df_radar.loc[df_radar['Rent_Anual'].idxmax()]['Ativo']
+melhor_taxa_valor = df_radar['Rent_Anual'].max()
+
+# 3. SIDEBAR (INTERAÇÃO DO USUÁRIO)
+st.sidebar.title("🕹️ Painel de Controle")
+st.sidebar.markdown("### Ajuste seus Parâmetros")
+aporte_base = st.sidebar.number_input("Aporte Base (R$):", value=2500.0)
 aporte_extra = st.sidebar.number_input("Aporte Aceleração (R$):", value=3000.0)
-mes_atual_acel = st.sidebar.checkbox("Mês de Aceleração (R$ 3k)?")
-valor_aporte_atual = aporte_extra if mes_atual_acel else aporte_base
+mes_acel = st.sidebar.checkbox("Este mês terá Aporte de Aceleração?")
+valor_aporte_atual = aporte_extra if mes_acel else aporte_base
+
+st.sidebar.divider()
+st.sidebar.markdown("### Seleção de Título")
+ativo_escolhido = st.sidebar.selectbox("Qual título você deseja operar hoje?", df_radar['Ativo'].tolist())
+taxa_anual_escolhida = df_radar[df_radar['Ativo'] == ativo_escolhido]['Rent_Anual'].values[0]
+taxa_mensal = (1 + (taxa_anual_escolhida/100))**(1/12) - 1
 
 # 4. PAINEL PRINCIPAL
-st.title("🏆 Wealth Catalyst IA - Estratégia Soberana")
+st.title("🏆 Wealth Catalyst IA - Terminal Soberano")
 
+# Indicadores Macro
 c1, c2, c3 = st.columns(3)
 c1.markdown(f"<div class='indicator-box selic-bg'>SELIC: {selic_at}%</div>", unsafe_allow_html=True)
 c2.markdown(f"<div class='indicator-box ipca-bg'>IPCA: {ipca_at}%</div>", unsafe_allow_html=True)
-c3.markdown(f"<div class='indicator-box alvo-bg'>APORTE: {real_br(valor_aporte_atual)}</div>", unsafe_allow_html=True)
+c3.markdown(f"<div class='indicator-box alvo-bg'>OPERAÇÃO: {taxa_anual_escolhida:.2f}% a.a.</div>", unsafe_allow_html=True)
 
-# SEÇÃO DE SUGESTÃO TÁTICA
-st.markdown("### 🎯 Plano de Alocação Sugerida (Deste Mês)")
-col_a, col_b = st.columns([1, 2])
-
-alocacao = []
-for item in radar_dados:
-    valor_alocado = valor_aporte_atual * item['Peso']
-    alocacao.append({
-        "Ativo": item['Ativo'],
-        "Sugestão de Compra": real_br(valor_alocado),
-        "Peso na Carteira": f"{item['Peso']*100:.0f}%",
-        "Risco": item['Risco']
-    })
-
-with col_b:
-    st.table(pd.DataFrame(alocacao))
-with col_a:
-    st.markdown(f"""
-    <div class='sugestao-card'>
-        <strong>INSIGHT DA IA:</strong><br>
-        Para bater a inflação de {ipca_at}%, dividimos seu aporte em 
-        <strong>40% Proteção</strong>, <strong>30% Renda Fixa</strong> e 
-        <strong>30% Aceleração</strong>.
+# CARD DE ACELERAÇÃO (SUGESTÃO IA)
+st.markdown(f"""
+    <div class='acelerador-card'>
+        <span style='color: #FFD700; font-size: 1.2rem;'>⚡ <strong>MOTOR DE ACELERAÇÃO ATIVADO</strong></span><br>
+        O título com maior poder de ganho real hoje é: <strong>{melhor_ativo_nome}</strong> ({melhor_taxa_valor:.2f}% a.a.).<br>
+        Sugestão de Alocação: <strong>{real_br(valor_aporte_atual * 0.7)}</strong> em {ativo_escolhido} e <strong>{real_br(valor_aporte_atual * 0.3)}</strong> em {melhor_ativo_nome} para acelerar a meta.
     </div>
-    """, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
-# ABAS
+# Radar Completo para o usuário analisar
+st.markdown("### 🔍 Radar de Oportunidades Líquidas")
+def colorir_risco(val):
+    color = '#00ff88' if val == 'Baixo' else '#ffcc00' if val == 'Moderado' else '#ff4444'
+    return f'color: {color}; font-weight: bold'
+
+df_radar_view = df_radar.copy()
+df_radar_view['Rent_Anual'] = df_radar_view['Rent_Anual'].apply(lambda x: f"{x:.2f}%")
+st.table(df_radar_view.style.applymap(colorir_risco, subset=['Risco']))
+
+# ABAS DE PROJEÇÃO
 tab1, tab2 = st.tabs(["📊 CRONOGRAMA 12 MESES", "🚀 PROJEÇÃO 10 ANOS"])
 
-# Cálculo da taxa média ponderada da carteira sugerida
-taxa_media_anual = sum([item['Rent_Anual'] * item['Peso'] for item in radar_dados])
-taxa_mensal = (1 + (taxa_media_anual/100))**(1/12) - 1
-
 with tab1:
-    st.subheader("Evolução Mensal da Carteira Sugerida")
+    st.subheader(f"Plano Tático Baseado em: {ativo_escolhido}")
     saldo, logs = 0, []
     for m in range(1, 13):
         aporte = aporte_extra if m in [6, 12] else aporte_base
@@ -106,10 +110,10 @@ with tab1:
     st.table(pd.DataFrame(logs))
 
 with tab2:
-    st.subheader("Rumo à Independência")
+    st.subheader("Simulação de Independência Financeira")
     renda_alvo = st.number_input("Renda Desejada (R$):", value=5000.0)
     cap_alvo = renda_alvo / taxa_mensal
-    st.markdown(f"**Capital Alvo: {real_br(cap_alvo)}**")
+    st.success(f"Capital Alvo: {real_br(cap_alvo)}")
     
     saldo_10, logs_10 = 0, []
     for ano in range(1, 11):
