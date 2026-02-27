@@ -45,7 +45,7 @@ if not st.session_state.auth:
     st.title("🛡️ Terminal Dr. Strategist - Autenticação")
     senha = st.text_input("Chave Mestra:", type="password")
     if st.button("INICIALIZAR CÉREBRO"):
-        if senha == "102030":
+        if senha == "1020*30":
             st.session_state.auth = True
             st.rerun()
         else:
