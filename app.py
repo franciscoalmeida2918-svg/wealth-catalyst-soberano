@@ -1,18 +1,46 @@
-# data_preprocessing.py
+import streamlit as st
 import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
+from model import (
+    baixar_dados,
+    criar_features,
+    preparar_dados,
+    treinar_modelo,
+    gerar_sinais,
+    simular_estrategia
+)
 
-def load_and_clean_data(file_path):
-    data = pd.read_csv(file_path)
-    data = data.dropna()  # Remove missing values
-    return data
+st.set_page_config(page_title="IA Financeira", layout="wide")
 
-def preprocess_data(data):
-    X = data.drop('target', axis=1)
-    y = data['target']
-    X = StandardScaler().fit_transform(X)  # Feature scaling
-    return X, y
+st.title("📈 IA para Investimentos – Previsão e Estratégia")
 
-def split_data(X, y, test_size=0.2):
-    return train_test_split(X, y, test_size=test_size, random_state=42)
+ticker = st.sidebar.text_input("Ticker", "AAPL")
+start = st.sidebar.date_input("Data inicial", pd.to_datetime("2015-01-01"))
+n_lags = st.sidebar.slider("Número de Lags", 3, 20, 5)
+
+if st.sidebar.button("Treinar IA"):
+    with st.spinner("Baixando dados..."):
+        df_raw = baixar_dados(ticker, str(start))
+
+    with st.spinner("Criando features..."):
+        df_feat = criar_features(df_raw, n_lags=n_lags)
+
+    with st.spinner("Preparando dados..."):
+        X, y, feature_cols = preparar_dados(df_feat)
+
+    with st.spinner("Treinando modelo..."):
+        modelo, mse_scores = treinar_modelo(X, y)
+
+    st.success("Modelo treinado com sucesso!")
+    st.write("MSE médio:", sum(mse_scores) / len(mse_scores))
+
+    with st.spinner("Gerando sinais..."):
+        df_signals = gerar_sinais(df_feat, modelo, feature_cols)
+
+    with st.spinner("Simulando estratégia..."):
+        df_resultado = simular_estrategia(df_signals)
+
+    st.subheader("Equity Curve")
+    st.line_chart(df_resultado[["Strategy_Equity", "Buy_Hold_Equity"]])
+
+    st.subheader("Importância das Features")
+    st.bar_chart(modelo.feature_importances_)
