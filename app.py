@@ -1,8 +1,9 @@
 import streamlit as st
 import pandas as pd
 import requests
+from datetime import datetime
 
-# 1. ESTÉTICA E CONFIGURAÇÃO
+# 1. ESTÉTICA PRETO FOSCO (VISIBILIDADE MÁXIMA)
 st.set_page_config(page_title="Wealth Catalyst IA", layout="wide")
 
 st.markdown("""
@@ -11,11 +12,11 @@ st.markdown("""
     div[data-testid="stTable"] { background-color: #1A1A1A; border: 1px solid #333333; border-radius: 8px; }
     th { color: #FFFFFF !important; background-color: #262626 !important; }
     td { color: #FFFFFF !important; }
-    .indicator-box { padding: 25px; border-radius: 15px; text-align: center; color: white; font-weight: 800; font-size: 1.4rem; margin-bottom: 15px; }
+    .indicator-box { padding: 25px; border-radius: 15px; text-align: center; color: white; font-weight: 800; font-size: 1.2rem; margin-bottom: 15px; border: 1px solid #333; }
     .selic-bg { background-color: #00429d; } 
     .ipca-bg { background-color: #a33200; }  
+    .ifil-bg { background-color: #6a1b9a; } /* Cor para IFIL */
     .alvo-bg { background-color: #005f36; }  
-    .acelerador-card { background-color: #1E1E1E; padding: 20px; border: 2px solid #FFD700; border-radius: 10px; margin-bottom: 20px; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -24,83 +25,68 @@ def real_br(valor):
 
 if "auth" not in st.session_state: st.session_state.auth = False
 if not st.session_state.auth:
-    st.title("🛡️ Wealth Catalyst IA")
+    st.title("🛡️ Terminal Soberano")
     senha = st.text_input("Chave de Segurança:", type="password")
-    if st.button("Acessar Terminal"):
-        if senha == ".1234.": st.session_state.auth = True; st.rerun()
+    if st.button("Acessar"):
+        if senha == "12.3.4": st.session_state.auth = True; st.rerun()
     st.stop()
 
-# 2. MOTOR DE BUSCA (REAL-TIME) + INTELIGÊNCIA DE ACELERAÇÃO
-@st.cache_data(ttl=3600)
-def buscar_dados_mercado():
+# 2. MOTOR DE BUSCA MULTISSETORIAL (ATUALIZAÇÃO DIÁRIA)
+@st.cache_data(ttl=86400)
+def buscar_taxas_vivas():
     try:
-        s = float(requests.get("https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados/ultimos/1?formato=json", timeout=5).json()[0]['valor'])
-        i = float(requests.get("https://api.bcb.gov.br/dados/serie/bcdata.sgs.433/dados/ultimos/1?formato=json", timeout=5).json()[0]['valor'])
+        # SELIC e IPCA (Banco Central)
+        s = float(requests.get("https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados/ultimos/1?formato=json").json()[0]['valor'])
+        i = float(requests.get("https://api.bcb.gov.br/dados/serie/bcdata.sgs.433/dados/ultimos/1?formato=json").json()[0]['valor'])
+        
+        # MONITORAMENTO AUTOMÁTICO DE ÍNDICES (Simulação de Scanner de Mercado 2026)
+        # IFIL (Logística) - Geralmente IPCA + Spread Logístico
+        taxa_ifil = round(i + 6.2, 2)
+        # Papel (Recebíveis) - Geralmente IPCA + 7.5% ou 110% CDI
+        taxa_papel = round(i + 7.8, 2)
         
         radar = [
-            {"Ativo": "LCI/LCA (Isento)", "Rent_Anual": i + 6.8, "Risco": "Baixo", "Tipo": "Proteção"},
-            {"Ativo": "CDB (125% CDI)", "Rent_Anual": (s * 1.25) * 0.825, "Risco": "Baixo", "Tipo": "Renda Fixa"},
-            {"Ativo": "FIIs (Destaque Dividendos)", "Rent_Anual": 12.5, "Risco": "Moderado", "Tipo": "Renda Variável"},
-            {"Ativo": "Ações (Máxima Aceleração)", "Rent_Anual": 16.2, "Risco": "Alto", "Tipo": "Crescimento"},
-            {"Ativo": "CRI/CRA Premium", "Rent_Anual": i + 7.8, "Risco": "Moderado", "Tipo": "Crédito Privado"}
+            {"Ativo": "LCI/LCA (Isento)", "Rent_Anual": i + 6.8, "Risco": "Baixo"},
+            {"Ativo": "CDB (125% CDI)", "Rent_Anual": (s * 1.25) * 0.825, "Risco": "Baixo"},
+            {"Ativo": "IFIL (FIIs Logística)", "Rent_Anual": taxa_ifil, "Risco": "Moderado"},
+            {"Ativo": "FIIs Papel (High Yield)", "Rent_Anual": taxa_papel, "Risco": "Moderado"},
+            {"Ativo": "Ações (Máxima Aceleração)", "Rent_Anual": 16.5, "Risco": "Alto"},
         ]
-        return s, i, radar
-    except: return 13.25, 4.50, []
+        return s, i, taxa_ifil, radar
+    except: return 13.25, 4.50, 10.70, []
 
-selic_at, ipca_at, radar_dados = buscar_dados_mercado()
+selic_at, ipca_at, taxa_ifil_at, radar_dados = buscar_taxas_vivas()
 df_radar = pd.DataFrame(radar_dados)
 
-# Identifica o título com maior poder de aceleração
-melhor_ativo_nome = df_radar.loc[df_radar['Rent_Anual'].idxmax()]['Ativo']
-melhor_taxa_valor = df_radar['Rent_Anual'].max()
-
-# 3. SIDEBAR (INTERAÇÃO DO USUÁRIO)
-st.sidebar.title("🕹️ Painel de Controle")
-st.sidebar.markdown("### Ajuste seus Parâmetros")
+# 3. SIDEBAR (CONTROLE DIÁRIO)
+st.sidebar.title("🕹️ Central Multi-Índices")
+st.sidebar.write(f"📅 Status: {datetime.now().strftime('%d/%m/%Y')}")
 aporte_base = st.sidebar.number_input("Aporte Base (R$):", value=2500.0)
 aporte_extra = st.sidebar.number_input("Aporte Aceleração (R$):", value=3000.0)
-mes_acel = st.sidebar.checkbox("Este mês terá Aporte de Aceleração?")
+mes_acel = st.sidebar.checkbox("Mês de Aceleração?")
 valor_aporte_atual = aporte_extra if mes_acel else aporte_base
 
 st.sidebar.divider()
-st.sidebar.markdown("### Seleção de Título")
-ativo_escolhido = st.sidebar.selectbox("Qual título você deseja operar hoje?", df_radar['Ativo'].tolist())
+ativo_escolhido = st.sidebar.selectbox("Escolha o Ativo para Operação:", df_radar['Ativo'].tolist())
 taxa_anual_escolhida = df_radar[df_radar['Ativo'] == ativo_escolhido]['Rent_Anual'].values[0]
 taxa_mensal = (1 + (taxa_anual_escolhida/100))**(1/12) - 1
 
-# 4. PAINEL PRINCIPAL
-st.title("🏆 Wealth Catalyst IA - Terminal Soberano")
+# 4. PAINEL SOBERANO
+st.title("🏆 Wealth Catalyst IA - Scanner Multi-Ativos")
 
-# Indicadores Macro
-c1, c2, c3 = st.columns(3)
+c1, c2, c3, c4 = st.columns(4)
 c1.markdown(f"<div class='indicator-box selic-bg'>SELIC: {selic_at}%</div>", unsafe_allow_html=True)
 c2.markdown(f"<div class='indicator-box ipca-bg'>IPCA: {ipca_at}%</div>", unsafe_allow_html=True)
-c3.markdown(f"<div class='indicator-box alvo-bg'>OPERAÇÃO: {taxa_anual_escolhida:.2f}% a.a.</div>", unsafe_allow_html=True)
+c3.markdown(f"<div class='indicator-box ifil-bg'>IFIL (Log): {taxa_ifil_at}%</div>", unsafe_allow_html=True)
+c4.markdown(f"<div class='indicator-box alvo-bg'>TARGET: {taxa_anual_escolhida:.2f}%</div>", unsafe_allow_html=True)
 
-# CARD DE ACELERAÇÃO (SUGESTÃO IA)
-st.markdown(f"""
-    <div class='acelerador-card'>
-        <span style='color: #FFD700; font-size: 1.2rem;'>⚡ <strong>MOTOR DE ACELERAÇÃO ATIVADO</strong></span><br>
-        O título com maior poder de ganho real hoje é: <strong>{melhor_ativo_nome}</strong> ({melhor_taxa_valor:.2f}% a.a.).<br>
-        Sugestão de Alocação: <strong>{real_br(valor_aporte_atual * 0.7)}</strong> em {ativo_escolhido} e <strong>{real_br(valor_aporte_atual * 0.3)}</strong> em {melhor_ativo_nome} para acelerar a meta.
-    </div>
-""", unsafe_allow_html=True)
-
-# Radar Completo para o usuário analisar
 st.markdown("### 🔍 Radar de Oportunidades Líquidas")
-def colorir_risco(val):
-    color = '#00ff88' if val == 'Baixo' else '#ffcc00' if val == 'Moderado' else '#ff4444'
-    return f'color: {color}; font-weight: bold'
+st.table(df_radar.style.format({"Rent_Anual": "{:.2f}%"}))
 
-df_radar_view = df_radar.copy()
-df_radar_view['Rent_Anual'] = df_radar_view['Rent_Anual'].apply(lambda x: f"{x:.2f}%")
-st.table(df_radar_view.style.applymap(colorir_risco, subset=['Risco']))
-
-# ABAS DE PROJEÇÃO
-tab1, tab2 = st.tabs(["📊 CRONOGRAMA 12 MESES", "🚀 PROJEÇÃO 10 ANOS"])
+tab1, tab2 = st.tabs(["📊 PLANO 1 ANO", "🚀 ACELERAÇÃO 10 ANOS"])
 
 with tab1:
-    st.subheader(f"Plano Tático Baseado em: {ativo_escolhido}")
+    st.subheader(f"Estratégia: {ativo_escolhido}")
     saldo, logs = 0, []
     for m in range(1, 13):
         aporte = aporte_extra if m in [6, 12] else aporte_base
@@ -110,7 +96,7 @@ with tab1:
     st.table(pd.DataFrame(logs))
 
 with tab2:
-    st.subheader("Simulação de Independência Financeira")
+    st.subheader("Simulação para Meta de 10 Anos")
     renda_alvo = st.number_input("Renda Desejada (R$):", value=5000.0)
     cap_alvo = renda_alvo / taxa_mensal
     st.success(f"Capital Alvo: {real_br(cap_alvo)}")
