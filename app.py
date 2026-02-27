@@ -4,103 +4,102 @@ import numpy as np
 import requests
 from datetime import datetime
 
-# 1. ESTÉTICA DE ALTA FIDELIDADE (CÉREBRO DR. IA)
-st.set_page_config(page_title="Dr. Strategist IA", layout="wide")
+# 1. ESTÉTICA SOBERANA - ALTA PERFORMANCE
+st.set_page_config(page_title="Dr. Strategist IA - AGRESSIVA", layout="wide")
 
 st.markdown("""
     <style>
-    .stApp { background-color: #050505; color: #FFFFFF; font-family: 'Inter', sans-serif; }
-    .dr-card { background: #0a0a0a; border: 1px solid #00FF88; padding: 25px; border-radius: 10px; border-left: 10px solid #00FF88; margin: 20px 0; }
-    .metric-box { background: #111; border: 1px solid #222; padding: 20px; border-radius: 10px; text-align: center; }
-    .highlight { color: #00FF88; font-weight: 800; font-size: 1.2em; }
-    div[data-testid="stTable"] table { border: 1px solid #333; width: 100%; }
-    div[data-testid="stTable"] th { background-color: #111; color: #00FF88 !important; padding: 15px; }
-    div[data-testid="stTable"] td { background-color: #000; color: #FFF !important; padding: 12px; border: 1px solid #222; }
+    .stApp { background-color: #050505; color: #FFFFFF; }
+    .ia-response { background: #001a0d; border: 2px solid #00FF88; padding: 25px; border-radius: 15px; margin: 20px 0; box-shadow: 0 0 20px rgba(0,255,136,0.2); }
+    .highlight { color: #00FF88; font-weight: 800; }
+    .strategy-tag { background: #00FF88; color: #000; padding: 4px 10px; border-radius: 5px; font-weight: bold; font-size: 0.9rem; }
+    div[data-testid="stTable"] table { border: 1px solid #1f1f1f; }
+    div[data-testid="stTable"] th { background-color: #0d0d0d; color: #00FF88 !important; }
     </style>
 """, unsafe_allow_html=True)
 
 # --- SEGURANÇA SOBERANA ---
 if "auth" not in st.session_state: st.session_state.auth = False
 if not st.session_state.auth:
-    st.title("🛡️ Terminal Dr. Strategist - Autenticação")
-    if st.text_input("Chave Mestra:", type="password") == "10#2030*":
-        if st.button("INICIALIZAR CÉREBRO"): st.session_state.auth = True; st.rerun()
+    st.title("🛡️ Terminal Dr. Strategist - ACESSO RESTRITO")
+    if st.text_input("Senha Mestra:", type="password") == "102&030":
+        if st.button("ATIVAR ALAVANCAGEM"): st.session_state.auth = True; st.rerun()
     st.stop()
 
-# 2. MOTOR DE CÁLCULO E DADOS (API BANCO CENTRAL)
+# 2. MOTOR DE DADOS EM TEMPO REAL (MARKET INTELLIGENCE)
 @st.cache_data(ttl=3600)
-def get_market_metrics():
+def get_live_data():
     try:
-        selic = float(requests.get("https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados/ultimos/1?formato=json").json()[0]['valor'])
-        ipca = float(requests.get("https://api.bcb.gov.br/dados/serie/bcdata.sgs.433/dados/ultimos/1?formato=json").json()[0]['valor'])
-        return selic, ipca
+        s = float(requests.get("https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados/ultimos/1?formato=json").json()[0]['valor'])
+        i = float(requests.get("https://api.bcb.gov.br/dados/serie/bcdata.sgs.433/dados/ultimos/1?formato=json").json()[0]['valor'])
+        return s, i
     except: return 13.25, 4.50
 
-selic_atual, ipca_atual = get_market_metrics()
+selic, ipca = get_live_data()
 
-# 3. SALA DE GUERRA (PARÂMETROS DE ENTRADA)
+# 3. 🕹️ SALA DE GUERRA (PARÂMETROS SOBERANOS)
 st.sidebar.title("🕹️ Sala de Guerra")
-cap_inicial = st.sidebar.number_input("Capital Inicial (R$):", value=1000.0, step=1000.0)
-aporte_regular = st.sidebar.number_input("Aporte Base (R$):", value=2500.0)
-aporte_acelerador = st.sidebar.number_input("Aporte Aceleração (R$):", value=3000.0)
+cap_inicial = st.sidebar.number_input("Capital Inicial (R$):", value=10000.0)
+aporte_base = st.sidebar.number_input("Aporte Mensal (R$):", value=2800.0)
+aporte_acel = st.sidebar.number_input("Aporte Aceleração (R$):", value=3000.0)
 
-# 4. A SENTINELA: MOTOR DE ESTRATÉGIA E MATEMÁTICA AVANÇADA
-def solver_ia(comando, cap, base, acel, selic, ipca):
-    comando = comando.lower()
-    # Simulação de Taxa Soberana (Alvo: Sempre IPCA + 8% ou 115% CDI)
-    taxa_alvo_anual = 16.85 
-    taxa_mensal = (1 + (taxa_alvo_anual/100))**(1/12) - 1
-    ganho_real = taxa_alvo_anual - ipca
+# 4. A SENTINELA: IA COM DOUTORADO E ALAVANCAGEM (MODELO FILHA)
+def process_sovereign_logic(query, cap, base, acel, selic, ipca):
+    # Simulação de carteira agressiva: 60% ABC (CRI/CRA), 40% Inter/Itaú (LCI/FII)
+    # Taxa Alvo Agressiva: IPCA + 9% ou 120% CDI
+    taxa_alvo = 17.20 
+    taxa_mensal = (1 + (taxa_alvo/100))**(1/12) - 1
     
-    if "calcul" in comando or "quanto" in comando or "projeção" in comando:
-        # Cálculo Aritmético Avançado de Juros Compostos
-        meses = 120 # Foco na meta de 10 anos
-        patrimonio = cap
-        for m in range(1, meses + 1):
-            ap = acel if m % 6 == 0 else base # Aceleração semestral
-            patrimonio = (patrimonio + ap) * (1 + taxa_mensal)
-        
-        return f"""
-        <div class='dr-card'>
-            <b>VEREDITO DO DR. STRATEGIST:</b><br>
-            Executando cálculos de aritmética financeira avançada... <br><br>
-            • <b>Estratégia:</b> Alavancagem disparada via <span class='highlight'>Crédito Privado (ABC) e FIIs de Papel (Itaú)</span>.<br>
-            • <b>Taxa Soberana:</b> {taxa_alvo_anual}% a.a. | <b>Ganho Real:</b> <span class='highlight'>{ganho_real:.2f}% acima da inflação</span>.<br>
-            • <b>Projeção 10 Anos:</b> Seu patrimônio líquido final estimado é de <span class='highlight'>R$ {patrimonio:,.2f}</span>.<br><br>
-            <i>Informação limpa: O mercado hoje favorece o prefixado longo devido à curva futura da Selic.</i>
-        </div>
-        """
-    return "<div class='dr-card'>Aguardando comando técnico para processamento de dados.</div>"
+    # Simulação de 10 anos para resposta contextual
+    saldo_10y = cap
+    for m in range(1, 121):
+        ap = acel if m % 12 == 0 else base # Aporte acelerado no fim do ano
+        saldo_10y = (saldo_10y + ap) * (1 + taxa_mensal)
 
-# 5. INTERFACE DE COMANDO
-st.title("👨‍🔬 Dr. Strategist - IA de Investimentos")
-st.write(f"Conectado ao Dr. IA Central | Status: **Soberano** | Ganho Real Alvo: **> 10% a.a.**")
+    return f"""
+    <div class='ia-response'>
+        <span class='strategy-tag'>ESTRATÉGIA AGRESSIVA ATIVA</span><br><br>
+        <b>PARECER TÉCNICO:</b> Detectei oportunidade de alavancagem disparada. <br>
+        Com SELIC a {selic}% e IPCA a {ipca}%, o foco é <b>crédito privado isento</b> no <span class='highlight'>Banco ABC</span>. <br><br>
+        <b>CÁLCULO DE ALAVANCAGEM:</b> <br>
+        • Valor Futuro (10 anos): <span class='highlight'>R$ {saldo_10y:,.2f}</span> líquido. <br>
+        • Ganho Real: <span class='highlight'>{(taxa_alvo - ipca):.2f}% a.a.</span> (Blindagem total contra inflação). <br><br>
+        <i>IA Sentinela aprendeu: Você busca o caminho mais rápido para a meta. Sugestão: Reinvestir 100% dos dividendos dos FIIs no Itaú imediatamente para compor o Mês 02.</i>
+    </div>
+    """
 
-comando_user = st.text_input("Insira sua dúvida ou solicitação de cálculo (Ex: Calcule minha alavancagem para 5 anos):")
+# 5. INTERFACE DO ORÁCULO
+st.title("👨‍🔬 Dr. Strategist - IA de Alavancagem Disparada")
+st.write(f"Conexão: **Soberana** | Modo: **Agressivo** | Alvo: **Minimizar Tempo**")
 
-if comando_user:
-    st.markdown(solver_ia(comando_user, cap_inicial, aporte_regular, aporte_acel, selic_atual, ipca_atual), unsafe_allow_html=True)
+comando = st.text_input("Ordene um cálculo ou peça uma estratégia (Ex: Calcule minha alavancagem):")
 
-# 6. TABELA DE TOMADA DE DECISÃO (EXCEL STYLE)
+if comando:
+    st.markdown(process_sovereign_logic(comando, cap_inicial, aporte_base, aporte_acel, selic, ipca), unsafe_allow_html=True)
+
+# 6. TABELA EXCEL: O RESULTADO DA TOMADA DE DECISÃO
 st.divider()
-st.subheader("📊 Cronograma de Crescimento Disparado (Net Value)")
+st.subheader("📊 Cronograma de Alavancagem Disparada (Visão Líquida)")
 
 def real_br(v): return f"R$ {v:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
 
-t_anual = 16.85
-t_mensal = (1 + (t_anual/100))**(1/12) - 1
-saldo = cap_inicial
-data_table = []
+t_mensal = (1 + (17.20/100))**(1/12) - 1
+saldo_h = cap_inicial
+logs = []
+
+# Mês 00
+logs.append({"Mês": "Mês 00", "Aporte": real_br(0), "Lucro Líquido": real_br(0), "Patrimônio": real_br(saldo_h)})
 
 for m in range(1, 13):
-    ap = aporte_acelerador if m in [6, 12] else aporte_regular
-    lucro = saldo * t_mensal
-    saldo += ap + lucro
-    data_table.append({
+    # Aporte de aceleração no final do ano (mês 12)
+    ap = aporte_acel if m == 12 else aporte_base
+    lucro = saldo_h * t_mensal
+    saldo_h += ap + lucro
+    logs.append({
         "Mês": f"Mês {m:02d}",
-        "Aporte Líquido": real_br(ap),
-        "Lucro Real (Líquido)": real_br(lucro),
-        "Patrimônio Acumulado": real_br(saldo)
+        "Aporte": real_br(ap),
+        "Lucro Líquido": real_br(lucro),
+        "Patrimônio": real_br(saldo_h)
     })
 
-st.table(pd.DataFrame(data_table))
+st.table(pd.DataFrame(logs))
