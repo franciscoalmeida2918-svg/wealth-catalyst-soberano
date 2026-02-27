@@ -20,24 +20,40 @@ st.markdown("""
     
     .strategy-card { background: linear-gradient(90deg, #0d0d0d 0%, #1a1a1a 100%); border-left: 5px solid #00FF88; padding: 20px; border-radius: 5px; margin: 15px 0; }
     .allocation-box { background-color: #1a1a1a; padding: 10px; border-radius: 5px; border: 1px dashed #00FF88; margin-top: 10px; }
+    .bank-tag { background-color: #333; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; color: #00FF88; font-weight: bold; }
     </style>
 """, unsafe_allow_html=True)
 
 def real_br(valor):
     return f"R$ {valor:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
 
-# 2. MOTOR DE BUSCA E INTELIGÊNCIA DE MERCADO
+# --- SISTEMA DE SEGURANÇA ---
+if "autenticado" not in st.session_state:
+    st.session_state.autenticado = False
+
+if not st.session_state.autenticado:
+    st.title("🛡️ Acesso ao Terminal Soberano")
+    senha = st.text_input("Insira a Chave de Comando:", type="password")
+    if st.button("Desbloquear"):
+        if senha == "1234": # Altere aqui sua senha
+            st.session_state.autenticado = True
+            st.rerun()
+        else:
+            st.error("Chave incorreta. Acesso negado.")
+    st.stop()
+
+# 2. MOTOR DE BUSCA E INTELIGÊNCIA DE MERCADO (XP/BTG/INTER)
 @st.cache_data(ttl=3600)
 def scanner_estrategico():
     try:
         s = float(requests.get("https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados/ultimos/1?formato=json").json()[0]['valor'])
         i = float(requests.get("https://api.bcb.gov.br/dados/serie/bcdata.sgs.433/dados/ultimos/1?formato=json").json()[0]['valor'])
         
-        # Títulos Foco (Máximo 3 para manter o foco soberano)
+        # Mapeamento de Instituições por melhor taxa histórica/atual
         radar = [
-            {"Ativo": "Ações/CRI (Aceleração)", "Rent_Anual": 17.8, "Peso": 0.50}, # 50% de alocação
-            {"Ativo": "IFIL (Logística)", "Rent_Anual": round(i + 6.5, 2), "Peso": 0.30}, # 30% de alocação
-            {"Ativo": "LCI/LCA (Blindagem)", "Rent_Anual": round(i + 6.8, 2), "Peso": 0.20} # 20% de alocação
+            {"Ativo": "Ações/CRI (Aceleração)", "Rent_Anual": 17.8, "Peso": 0.50, "Banco": "XP Investimentos"}, 
+            {"Ativo": "IFIL (Logística)", "Rent_Anual": round(i + 6.5, 2), "Peso": 0.30, "Banco": "BTG Pactual"}, 
+            {"Ativo": "LCI/LCA (Blindagem)", "Rent_Anual": round(i + 6.8, 2), "Peso": 0.20, "Banco": "Banco Inter"} 
         ]
         return s, i, radar
     except: return 13.25, 4.50, []
@@ -47,17 +63,23 @@ df_radar = pd.DataFrame(radar_dados)
 
 # 3. SIDEBAR - OPERAÇÕES
 st.sidebar.title("🕹️ Operações de Guerra")
+if st.sidebar.button("Encerrar Sessão"):
+    st.session_state.autenticado = False
+    st.rerun()
+
 cap_inicial = st.sidebar.number_input("Valor Capital Inicial (R$):", value=0.0)
 aporte_base = st.sidebar.number_input("Aporte Padrão (R$):", value=2500.0)
 aporte_extra = st.sidebar.number_input("Aporte Aceleração (R$):", value=3000.0)
 
 st.sidebar.divider()
-st.sidebar.markdown("### 🎯 Plano de Alocação IA")
-valor_atual = aporte_extra if datetime.now().month in [6, 12] else aporte_base
+st.sidebar.markdown("### 🏦 Custódia Estratégica")
+for r in radar_dados:
+    st.sidebar.write(f"**{r['Ativo']}**: {r['Banco']}")
 
-# 4. CÁLCULO DA TAXA MÉDIA PONDERADA (A "TAXA SOBERANA")
+# 4. CÁLCULO DA TAXA MÉDIA PONDERADA
 taxa_ponderada_anual = sum(item['Rent_Anual'] * item['Peso'] for item in radar_dados)
 taxa_mensal_soberana = (1 + (taxa_ponderada_anual/100))**(1/12) - 1
+valor_atual = aporte_extra if datetime.now().month in [6, 12] else aporte_base
 
 # 5. PAINEL DE CONTROLE TÁTICO
 st.title("🏆 Terminal de Minimização de Prazo")
@@ -68,24 +90,23 @@ c2.markdown(f"<div class='indicator-box ipca-bg'>IPCA: {ipca_at}%</div>", unsafe
 c3.markdown(f"<div class='indicator-box ifil-bg' style='background-color:#6a1b9a'>MIX SOBERANO: {taxa_ponderada_anual:.2f}%</div>", unsafe_allow_html=True)
 c4.markdown(f"<div class='indicator-box alvo-bg'>GANHO REAL: {(taxa_ponderada_anual - ipca_at):.2f}%</div>", unsafe_allow_html=True)
 
-# CARD DE ESTRATÉGIA ATIVA
+# CARD DE ESTRATÉGIA ATIVA COM INDICAÇÃO DE BANCO
 st.markdown(f"""
 <div class='strategy-card'>
-    <h3 style='color:#00FF88; margin-top:0;'>🛡️ ESTRATÉGIA DE DIVISÃO PARA MINIMIZAR PRAZO</h3>
-    Para reduzir seu tempo de meta, o aporte de <strong>{real_br(valor_atual)}</strong> deve ser dividido assim:
+    <h3 style='color:#00FF88; margin-top:0;'>🛡️ ESTRATÉGIA DE DIVISÃO E LOCALIZAÇÃO</h3>
+    Para minimizar o prazo, divida seu aporte de <strong>{real_br(valor_atual)}</strong> conforme abaixo:
     <div class='allocation-box'>
-        • 50% em <strong>{radar_dados[0]['Ativo']}</strong> ({radar_dados[0]['Rent_Anual']}% a.a.): {real_br(valor_atual * 0.5)} <br>
-        • 30% em <strong>{radar_dados[1]['Ativo']}</strong> ({radar_dados[1]['Rent_Anual']}% a.a.): {real_br(valor_atual * 0.3)} <br>
-        • 20% em <strong>{radar_dados[2]['Ativo']}</strong> ({radar_dados[2]['Rent_Anual']}% a.a.): {real_br(valor_atual * 0.2)}
+        • 50% em <strong>{radar_dados[0]['Ativo']}</strong> na <span class='bank-tag'>{radar_dados[0]['Banco']}</span>: {real_br(valor_atual * 0.5)} <br>
+        • 30% em <strong>{radar_dados[1]['Ativo']}</strong> no <span class='bank-tag'>{radar_dados[1]['Banco']}</span>: {real_br(valor_atual * 0.3)} <br>
+        • 20% em <strong>{radar_dados[2]['Ativo']}</strong> no <span class='bank-tag'>{radar_dados[2]['Banco']}</span>: {real_br(valor_atual * 0.2)}
     </div>
-    <br><i>Esta combinação gera uma taxa líquida de <strong>{taxa_ponderada_anual:.2f}% a.a.</strong>, focando em bater a inflação e acelerar o ganho de capital.</i>
 </div>
 """, unsafe_allow_html=True)
 
-tab1, tab2 = st.tabs(["📊 CRONOGRAMA 12 MESES (MIX)", "🚀 META 10 ANOS (HACKED)"])
+tab1, tab2 = st.tabs(["📊 CRONOGRAMA 12 MESES (LÍQUIDO)", "🚀 ACELERAÇÃO PARA META"])
 
 with tab1:
-    st.subheader("Simulação de Execução da Carteira Otimizada")
+    st.subheader("Simulação de Fluxo de Caixa Otimizado")
     saldo = cap_inicial
     logs = []
     for m in range(1, 13):
@@ -96,10 +117,10 @@ with tab1:
     st.table(pd.DataFrame(logs))
 
 with tab2:
-    st.subheader("Minimização de Prazo Sobeana")
+    st.subheader("Minimização do Período de 10 Anos")
     renda_alvo = st.number_input("Renda Desejada Mensal (R$):", value=5000.0)
     capital_meta = renda_alvo / taxa_mensal_soberana
-    st.success(f"Capital Alvo Necessário: {real_br(capital_meta)}")
+    st.success(f"Capital Alvo para Independência: {real_br(capital_meta)}")
     
     saldo_10 = cap_inicial
     logs_10 = []
@@ -112,12 +133,12 @@ with tab2:
         logs_10.append({
             "Ano": f"Ano {ano:02d}", 
             "Patrimônio Líquido": real_br(saldo_10), 
-            "Renda Passiva Estimada": real_br(saldo_10 * taxa_mensal_soberana),
+            "Renda Passiva": real_br(saldo_10 * taxa_mensal_soberana),
             "Meta (%)": f"{progresso:.1f}%"
         })
         if saldo_10 >= capital_meta:
              st.balloons()
-             st.warning(f"🎯 Meta alcançada no ANO {ano}!")
+             st.warning(f"🎯 Meta alcançada com Maestria no ANO {ano}!")
              break
              
     st.table(pd.DataFrame(logs_10))
