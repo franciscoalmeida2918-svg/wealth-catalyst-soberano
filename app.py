@@ -13,7 +13,7 @@ if not st.session_state.auth:
     st.subheader("Estratégia Soberana - Terminal Privado")
     senha = st.text_input("Chave de Segurança:", type="password")
     if st.button("Acessar Terminal"):
-        if senha == "1234":
+        if senha == "#$%12U3p7":
             st.session_state.auth = True
             st.rerun()
         else:
