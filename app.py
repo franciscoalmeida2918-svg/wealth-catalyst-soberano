@@ -3,14 +3,14 @@ import pandas as pd
 import requests
 from datetime import datetime
 
-# 1. ESTÉTICA SOBERANA - LINHAS DE EXCEL DEFINIDAS
+# 1. ESTÉTICA SOBERANA - GRID EXCEL E VISIBILIDADE
 st.set_page_config(page_title="Wealth Catalyst IA", layout="wide")
 
 st.markdown("""
     <style>
     .stApp { background-color: #000000; color: #FFFFFF; }
     
-    /* Estilização da Tabela com Linhas de Excel */
+    /* Tabelas estilo Excel */
     div[data-testid="stTable"] table {
         border-collapse: collapse;
         width: 100%;
@@ -47,16 +47,15 @@ if not st.session_state.auth:
     st.title("🛡️ Terminal Soberano")
     senha = st.text_input("Chave de Segurança:", type="password")
     if st.button("Acessar"):
-        if senha == "1.2-34": st.session_state.auth = True; st.rerun()
+        if senha == "@12.3-4": st.session_state.auth = True; st.rerun()
     st.stop()
 
-# 2. MOTOR DE BUSCA (ATUALIZAÇÃO AUTOMÁTICA)
+# 2. MOTOR DE BUSCA AUTOMÁTICO
 @st.cache_data(ttl=86400)
 def buscar_taxas_vivas():
     try:
         s = float(requests.get("https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados/ultimos/1?formato=json").json()[0]['valor'])
         i = float(requests.get("https://api.bcb.gov.br/dados/serie/bcdata.sgs.433/dados/ultimos/1?formato=json").json()[0]['valor'])
-        # Taxa dinâmica IFIL (Logística) e IFLL (Geral)
         taxa_ifil = round(i + 6.35, 2) 
         radar = [
             {"Ativo": "LCI/LCA (Isento)", "Rent_Anual": i + 6.8, "Risco": "Baixo"},
@@ -70,37 +69,34 @@ def buscar_taxas_vivas():
 selic_at, ipca_at, taxa_ifil_at, radar_dados = buscar_taxas_vivas()
 df_radar = pd.DataFrame(radar_dados)
 
-# 3. SIDEBAR
+# 3. SIDEBAR - OPERAÇÕES (AJUSTADO)
 st.sidebar.title("🕹️ Operações")
+cap_inicial = st.sidebar.number_input("Valor Capital Inicial (R$):", value=0.0)
 aporte_base = st.sidebar.number_input("Aporte Padrão (R$):", value=2500.0)
 aporte_extra = st.sidebar.number_input("Aporte Aceleração (R$):", value=3000.0)
-mes_acel = st.sidebar.checkbox("Ativar Aceleração no mês?")
-valor_aporte_atual = aporte_extra if mes_acel else aporte_base
 
 st.sidebar.divider()
-ativo_escolhido = st.sidebar.selectbox("Ativo para Cálculo:", df_radar['Ativo'].tolist())
+ativo_escolhido = st.sidebar.selectbox("Título Selecionado:", df_radar['Ativo'].tolist())
 taxa_anual_escolhida = df_radar[df_radar['Ativo'] == ativo_escolhido]['Rent_Anual'].values[0]
 taxa_mensal = (1 + (taxa_anual_escolhida/100))**(1/12) - 1
 
-# 4. PAINEL SOBERANO
-st.title("🏆 Wealth Catalyst IA - Estratégia Líquida")
+# 4. PAINEL PRINCIPAL
+st.title("🏆 Wealth Catalyst IA")
 
 c1, c2, c3, c4 = st.columns(4)
 c1.markdown(f"<div class='indicator-box selic-bg'>SELIC: {selic_at}%</div>", unsafe_allow_html=True)
 c2.markdown(f"<div class='indicator-box ipca-bg'>IPCA: {ipca_at}%</div>", unsafe_allow_html=True)
 c3.markdown(f"<div class='indicator-box ifil-bg'>IFIL: {taxa_ifil_at}%</div>", unsafe_allow_html=True)
-c4.markdown(f"<div class='indicator-box alvo-bg'>OPERAÇÃO: {taxa_anual_escolhida:.2f}%</div>", unsafe_allow_html=True)
-
-st.markdown("### 🔍 Radar de Oportunidades (Linhas Definidas)")
-st.table(df_radar.style.format({"Rent_Anual": "{:.2f}%"}))
+c4.markdown(f"<div class='indicator-box alvo-bg'>TARGET: {taxa_anual_escolhida:.2f}%</div>", unsafe_allow_html=True)
 
 tab1, tab2 = st.tabs(["📊 CRONOGRAMA 1 ANO", "🚀 ACELERAÇÃO 10 ANOS"])
 
 with tab1:
-    st.subheader(f"Simulação Detalhada: {ativo_escolhido}")
-    saldo, logs = 0, []
+    st.subheader(f"Estratégia: {ativo_escolhido}")
+    saldo = cap_inicial
+    logs = []
+    # O Capital Inicial aparece antes do primeiro aporte no log se houver valor
     for m in range(1, 13):
-        # Aportes de 3k em meses de engajamento (amostra 6 e 12)
         aporte = aporte_extra if m in [6, 12] else aporte_base
         lucro = saldo * taxa_mensal
         saldo += aporte + lucro
@@ -113,12 +109,13 @@ with tab1:
     st.table(pd.DataFrame(logs))
 
 with tab2:
-    st.subheader("Caminho da Independência (10 Anos)")
+    st.subheader("Caminho da Independência")
     renda_alvo = st.number_input("Renda Desejada (R$):", value=5000.0)
     cap_alvo = renda_alvo / taxa_mensal
     st.success(f"Capital Alvo: {real_br(cap_alvo)}")
     
-    saldo_10, logs_10 = 0, []
+    saldo_10 = cap_inicial
+    logs_10 = []
     for ano in range(1, 11):
         for m in range(1, 13):
             aporte = aporte_extra if m in [6, 12] else aporte_base
@@ -127,6 +124,6 @@ with tab2:
             "Ano": f"Ano {ano:02d}",
             "Patrimônio": real_br(saldo_10),
             "Renda Passiva": real_br(saldo_10 * taxa_mensal),
-            "Status Meta": f"{(saldo_10/cap_alvo)*100:.1f}%"
+            "Meta (%)": f"{(saldo_10/cap_alvo)*100:.1f}%"
         })
     st.table(pd.DataFrame(logs_10))
