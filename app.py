@@ -1,72 +1,117 @@
 import streamlit as st
 import pandas as pd
+import json
+import os
 import requests
-import random
 from datetime import datetime
 
 # ==========================================
-# 1. MOTOR DE PERCEPÇÃO EXTERNA (NEW)
+# 1. MOTOR DE MEMÓRIA PERMANENTE (APRENDIZADO)
 # ==========================================
-def recon_mundo_externo():
-    try:
-        # Puxa Selic/IPCA reais
-        selic = float(requests.get("https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados/ultimos/1?formato=json").json()[0]['valor'])
-        ipca = float(requests.get("https://api.bcb.gov.br/dados/serie/bcdata.sgs.433/dados/ultimos/1?formato=json").json()[0]['valor'])
-        
-        # Simulação de análise de volatilidade externa (VIX/Dólar)
-        tendencia = random.choice(["ALTA VOLATILIDADE", "ESTABILIDADE SOBERANA", "OPORTUNIDADE EM CRÉDITO"])
-        return selic, ipca, tendencia
-    except:
-        return 13.25, 4.50, "MODO SEGURO"
+MEMORIA_FILE = "ia_memory.json"
+
+def load_memory():
+    if os.path.exists(MEMORIA_FILE):
+        with open(MEMORIA_FILE, "r") as f:
+            return json.load(f)
+    return {"conhecimento_acumulado": [], "preferencias": {}}
+
+def save_memory(nova_informacao):
+    memoria = load_memory()
+    memoria["conhecimento_acumulado"].append({
+        "data": datetime.now().strftime("%d/%m/%Y %H:%M"),
+        "dado": nova_informacao
+    })
+    with open(MEMORIA_FILE, "w") as f:
+        json.dump(memoria, f, indent=4)
 
 # ==========================================
-# 2. INTERFACE E ESTÉTICA AVANÇADA
+# 2. INTERFACE SOBERANA
 # ==========================================
-st.set_page_config(page_title="Dr. Strategist IA - Recon", layout="wide")
+st.set_page_config(page_title="Dr. Strategist - Cérebro Evolutivo", layout="wide")
 
 st.markdown("""
 <style>
     .stApp { background-color: #050505; color: #FFFFFF; }
-    .recon-card { background: #001a0d; border: 1px solid #00FF88; padding: 20px; border-radius: 10px; margin-bottom: 20px; border-left: 5px solid #00FF88; }
-    .ia-thinking { color: #00FF88; font-family: 'Courier New', monospace; font-size: 0.9rem; }
+    .memory-card { background: #001a1a; border: 1px solid #00FFFF; padding: 15px; border-radius: 10px; font-size: 0.8rem; margin-bottom: 10px; }
+    .ia-response { background: #0a0a0a; border-left: 5px solid #00FF88; padding: 20px; border-radius: 10px; }
     .highlight { color: #00FF88; font-weight: bold; }
 </style>
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 3. LÓGICA DO AGENTE AUTÔNOMO
+# 3. CORE DA IA FILHA (APRENDIZAGEM ATIVA)
 # ==========================================
-selic, ipca, tendencia = recon_mundo_externo()
+st.title("👨‍🔬 Dr. Strategist - IA de Aprendizado Contínuo")
+st.write("Diretriz: Tudo o que é digitado expande o meu Core de Inteligência.")
 
-st.title("👨‍🔬 Dr. Strategist - Agente de Elite")
-st.markdown(f"📡 **Status do Sistema:** Conectado ao Mundo Externo | **Tendência Atual:** {tendencia}")
+# Carregar o que ela já sabe
+memoria_atual = load_memory()
 
-# Sala de Guerra (Inputs da sua imagem)
-st.sidebar.title("🕹️ Parâmetros de Missão")
-cap_inicial = st.sidebar.number_input("Capital Inicial (R$):", value=10000.0)
-aporte_base = st.sidebar.number_input("Aporte Mensal (R$):", value=2800.0)
-aporte_acel = st.sidebar.number_input("Aporte Aceleração (R$):", value=3000.0)
+with st.sidebar:
+    st.title("🧠 Memória Viva")
+    if st.button("Limpar Conhecimento"):
+        if os.path.exists(MEMORIA_FILE):
+            os.remove(MEMORIA_FILE)
+            st.rerun()
+    
+    st.write("Últimos aprendizados:")
+    for item in memoria_atual["conhecimento_acumulado"][-5:]: # Mostra os últimos 5
+        st.markdown(f"<div class='memory-card'><b>{item['data']}:</b> {item['dado']}</div>", unsafe_allow_html=True)
 
-# Comando da IA (como na sua Captura de Tela)
-comando = st.text_input("Comando de Voz/Texto (Ex: Qual a estratégia para hoje?):")
+# Entradas da Sala de Guerra
+cap_inicial = st.number_input("Capital Inicial:", value=10000.0)
+aporte_base = st.number_input("Aporte Mensal:", value=2800.0)
+aporte_acel = st.number_input("Aporte Aceleração (Ano):", value=3000.0)
+
+# ==========================================
+# 4. CAMPO DE ENTRADA (ONDE ELA APRENDE)
+# ==========================================
+comando = st.text_input("Ensine algo ou peça um cálculo (Ex: 'Lembre que meu banco ABC paga 115% do CDI'):")
 
 if comando:
-    with st.spinner("IA Sentinela processando dados externos..."):
-        # Aqui a IA "pensa" e cria o plano
-        taxa_estrategica = 16.50 # Alvo Agressivo
-        lucro_12m = (cap_inicial * (taxa_estrategica/100)) + (aporte_base * 12)
-        
-        st.markdown(f"""
-        <div class='recon-card'>
-            <div class='ia-thinking'>> ESCANEANDO MERCADO... OK<br>> VERIFICANDO IPCA ({ipca}%)... OK<br>> ALAVANCAGEM DETECTADA...</div><br>
-            <b>SENTINELA IA:</b> Detectei que a tendência é de <span class='highlight'>{tendencia}</span>. <br><br>
-            <b>O Plano Soberano para Hoje:</b><br>
-            1. <b>Alocação:</b> Mover excedente para o Banco ABC (CRA Isento) para capturar taxa real de {(taxa_estrategica-ipca):.2f}%.<br>
-            2. <b>Ação:</b> Seu aporte de R$ {aporte_base} hoje deve ser 100% focado em ativos IPCA+ para blindar contra a volatilidade externa.<br>
-            3. <b>Resultado:</b> Com essa manobra, seu patrimônio final de 12 meses salta para <span class='highlight'>R$ {lucro_12m:,.2f}</span>.
-        </div>
-        """, unsafe_allow_html=True)
+    # 1. Ela salva o que você digitou (Aprende)
+    save_memory(comando)
+    
+    # 2. Ela processa a resposta usando o contexto
+    taxa_base = 16.85 # Default Agressivo
+    
+    # Lógica de "Busca na Memória" simples
+    contexto_extra = ""
+    if "abc" in str(memoria_atual).lower():
+        contexto_extra = "Considerando seu histórico com o Banco ABC..."
 
-# Tabela estilo Excel da imagem
-st.subheader("📊 Cronograma de Ganhos Disparados")
-# (Lógica da tabela similar à imagem enviada, recalculada pela IA)
+    st.markdown(f"""
+    <div class='ia-response'>
+        <b>SENTINELA IA:</b> Entendido. Integrei '{comando}' ao meu banco de dados de estratégia.<br><br>
+        <b>PLANO ATUALIZADO:</b> {contexto_extra}<br>
+        Com Capital de {cap_inicial} e aportes de {aporte_base}, sua alavancagem está em modo <b>AGRESSIVO DISPARADO</b>.<br>
+        • Taxa Líquida Projetada: <span class='highlight'>{taxa_base}% a.a.</span><br>
+        • Status: Aprendendo novos padrões com sua entrada.
+    </div>
+    """, unsafe_allow_html=True)
+
+# ==========================================
+# 5. TABELA DE RESULTADOS (O QUE ELA JÁ SABE FAZER)
+# ==========================================
+st.divider()
+st.subheader("📊 Projeção Estratégica Líquida (12 Meses)")
+
+def real_br(v): return f"R$ {v:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+
+taxa_mensal = (1 + (16.85/100))**(1/12) - 1
+saldo = cap_inicial
+cronograma = []
+
+for m in range(1, 13):
+    ap = aporte_acel if m == 12 else aporte_base
+    lucro = saldo * taxa_mensal
+    saldo += ap + lucro
+    cronograma.append({
+        "Mês": f"Mês {m:02d}",
+        "Aporte": real_br(ap),
+        "Lucro Líquido": real_br(lucro),
+        "Patrimônio": real_br(saldo)
+    })
+
+st.table(pd.DataFrame(cronograma))
